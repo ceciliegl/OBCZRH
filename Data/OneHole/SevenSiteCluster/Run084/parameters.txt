@@ -1,0 +1,14 @@
+Nsites = 7
+Nh = 1
+
+tl = 9.2
+tr = 9.2
+Jzl = -1.0
+Jzr = -1.0
+Jpml = 0.0
+Jpmr = 0.0
+
+OBC = 1
+EIGVECS = 1
+CORR = 1
+RESETOLDFILES = 1
