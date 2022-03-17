@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-mainproject = "OneHole"  #Set to zero if only one project.
-project = "ElevenSiteCluster"
+mainproject = "TwoHolesOBCxPBCy"  #Set to zero if only one project.
+project = "N4"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
-runmin = 161
-runmax = 180
+runmin = 0
+runmax = 0
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,17 +16,17 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 11*np.ones(nruns, int)
+Nsites = 4*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
-Nh = 1*np.ones(nruns, int);
+Nh = 2*np.ones(nruns, int);
 
 #EXCHANGE#
-tl     = np.linspace(20.05, 21, nruns)#np.ones(nruns)
-tr     = tl
+tl     = np.linspace(4.76, 5, nruns)#np.ones(nruns)
+tr     = 2*tl
 Jzl    = -np.ones(nruns)
-Jzr    = Jzl
+Jzr    = 2*Jzl
 Jpml   = np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))
 Jpmr   = Jpml
 
