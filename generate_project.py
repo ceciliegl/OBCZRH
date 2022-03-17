@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-mainproject = "OneHole"  #Set to zero if only one project.
-project = "TwelveSiteCluster"
+mainproject = "OBCxPBCy"  #Set to zero if only one project.
+project = "N12"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
@@ -23,10 +23,10 @@ runmax = runmin + (nruns-1)
 Nh = 1*np.ones(nruns, int);
 
 #EXCHANGE#
-tl     = np.linspace(23, 28, nruns)#np.ones(nruns)
-tr     = tl
+tl     = np.linspace(25, 30, nruns)#np.ones(nruns)
+tr     = 2*tl
 Jzl    = -np.ones(nruns)
-Jzr    = Jzl
+Jzr    = 2*Jzl
 Jpml   = np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))
 Jpmr   = Jpml
 
