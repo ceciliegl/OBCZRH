@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-mainproject = "OBCxPBCy"  #Set to zero if only one project.
-project = "N12"
+mainproject = "TwoHolesOBCxOBCy"  #Set to zero if only one project.
+project = "N6"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 100
+runmax = 0
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,21 +16,33 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 12*np.ones(nruns, int)
+Nsites = 6*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
-Nh = 1*np.ones(nruns, int);
+Nh = 2*np.ones(nruns, int);
+
+OBCx = 1
+OBCy = 1
 
 #EXCHANGE#
-tl     = np.linspace(25, 30, nruns)#np.ones(nruns)
-tr     = 2*tl
+tl     = np.linspace(4.36, 30, nruns)#np.ones(nruns)
+tr     = np.linspace(0.24, 30, nruns)
 Jzl    = -np.ones(nruns)
-Jzr    = 2*Jzl
+Jzr    = Jzl
 Jpml   = np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))
 Jpmr   = Jpml
 
-OBC = 1             #1 for open boundary conditions. 0 for periodic boundary conditions.
+OBC = OBCx             #1 for open boundary conditions. 0 for periodic boundary conditions.
+if OBCx and not OBCy:
+    tr = 2*tr
+    Jzr = 2*Jzr
+    Jpmr = 2*Jpmr
+
+if not OBCx and OBCy:
+    tr = 0.5*tr
+    Jzr = 0.5*Jzr
+    Jpmr = 0.5*Jpmr
 
 EIGVECS = 1         #Compute eigenvectors?
 CORR = 1            #Compute correlations?

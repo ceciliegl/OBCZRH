@@ -28,14 +28,14 @@ tcPBC = [13.25, 6.55, 9.675, 18.5]
 dtcPBC = [0.05, 0.05, 0.075, 0.1]
 
 
-NPBCy = [3, 4, 5, 6, 7, 8, 9, 10, 11]  #Only periodic in y, open in x
-tcPBCy = [0.75, 0.925, 3.025, 4.275, 6.975, 9.075, 13.475, 16.725, 23.25]
-dtcPBCy = [0.05, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.05]
+NPBCy = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  #Only periodic in y, open in x
+tcPBCy = [0.75, 0.925, 3.025, 4.275, 6.975, 9.075, 13.475, 16.725, 23.25, 28.0]
+dtcPBCy = [0.05, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.025, 0.05, 0.05]
 
 
 plt.plot(N, tc, '.-', label='OBC')
 plt.plot(N, tcfit(N, *popt))
-#plt.plot(NPBC, tcPBC, '.-', label='PBC')
+plt.plot(NPBC, tcPBC, '.-', label='PBC')
 plt.plot(NPBCy, tcPBCy, '.-', label='PBCy')
 plt.xlabel('Sites')
 plt.ylabel(r'$t_c$')
