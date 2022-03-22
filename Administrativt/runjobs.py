@@ -15,8 +15,8 @@ except:
     machine = "meson"
 
 if machine == "meson" or machine == "Meson" or machine == "MESON":
-    s = commands.getstatusoutput("ps uaxw |grep OBCZRH |grep -v -c grep", shell=True)
-    running = int(s)
+    s = commands.getstatusoutput("ps uaxw |grep OBCZRH |grep -v -c grep")
+    running = int(s[1])
 else:
     running = 0
 
