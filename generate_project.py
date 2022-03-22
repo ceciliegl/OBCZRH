@@ -2,12 +2,12 @@ import os
 import numpy as np
 
 mainproject = "TwoHolesOBCxOBCy"  #Set to zero if only one project.
-project = "N6"
+project = "N9"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 0
+runmax = 200
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,7 +16,7 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 6*np.ones(nruns, int)
+Nsites = 9*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
@@ -26,8 +26,8 @@ OBCx = 1
 OBCy = 1
 
 #EXCHANGE#
-tl     = np.linspace(4.36, 30, nruns)#np.ones(nruns)
-tr     = np.linspace(0.24, 30, nruns)
+tl     = np.linspace(0, 10, nruns)#np.ones(nruns)
+tr     = tl
 Jzl    = -np.ones(nruns)
 Jzr    = Jzl
 Jpml   = np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))

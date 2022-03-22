@@ -692,6 +692,24 @@ void Solver::diagonalise()
   return;
 }
 
+Matrix<double,Dynamic,Dynamic> Solver::NhMATRIX(int siteind)
+{
+  Matrix<double,Dynamic,Dynamic> ans(maxIndexValue,maxIndexValue);
+  double statenumber;
+  vector<short int> statevec;
+
+  ans.setZero();
+
+  for (int i = 0; i < maxIndexValue; i++)
+  {
+    statenumber = converttable.index_to_state[i];
+    statevec = statenum_to_statevec(statenumber);
+    ans(i,i) = 1-abs(statevec[siteind]);
+  }
+
+  return ans;
+}
+
 vector<double> Solver::Szmat(int siteind)
 {
   //Sovle it as a sparse matrix maybe? It is diagonal?

@@ -153,9 +153,12 @@ def S0pmS1pmThreeSites(beta, t):
     return (1./12.)*(-np.exp(-beta*(-J/4.-2*t)) + 2*np.exp(-beta*(-J/4.-t)) - 2*np.exp(-beta*(-J/4.+t)) + np.exp(-beta*(-J/4.+2*t)))/ZThreeSites(beta, t, J)
 
 
-print(S0zS1zThreeSites(100,0.4))
+#print(S0zS1zThreeSites(100,0.4))
 
 #Plot energy evolution as function of t.
+
+"""
+#Currently only working for one hole.
 
 plt.figure(1)
 
@@ -179,6 +182,8 @@ plt.plot(t, Enu2, '.-', c=plotstyle.TS1989)
 plt.legend([r"All down", r"One up", r"Two up"])
 plt.xlabel(r"$t$")
 plt.ylabel(r"Energy")
+
+"""
 
 
 #Also for each t, plot xy and zz correlations for nearest-neighbour.
