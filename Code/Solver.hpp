@@ -48,6 +48,10 @@ public:
   unsigned int statevec_to_statenum(vector<short int> statevec);
   vector<short int> statenum_to_statevec(unsigned int statenum);
 
+  Matrix<double,Dynamic,Dynamic> NhMATRIX(int siteind);
+  vector<vector<complex<double>>> NhExp(vector<double> beta, vector<double> time);
+  vector<vector<vector<complex<double>>>> NhCorr(vector<double> beta, vector<double> time);
+
   vector<double> Szmat(int siteind);
 
   Matrix<double, Dynamic, Dynamic> SzmatMATRIX(int siteind);
@@ -74,6 +78,7 @@ public:
   void WritePartition(vector<double> beta, vector<double> partition);
   void WriteCorr(vector<double> beta, vector<double> time, vector<vector<vector<complex<double>>>> z, vector<vector<vector<complex<double>>>> pm);
   void WriteHoleDens();
+  void WriteHoleCorr();
   void resetdatafiles();
 
 };
@@ -692,6 +697,93 @@ void Solver::diagonalise()
   return;
 }
 
+Matrix<double,Dynamic,Dynamic> Solver::NhMATRIX(int siteind)
+{
+  Matrix<double,Dynamic,Dynamic> ans(maxIndexValue,maxIndexValue);
+  double statenumber;
+  vector<short int> statevec;
+
+  ans.setZero();
+
+  for (int i = 0; i < maxIndexValue; i++)
+  {
+    statenumber = converttable.index_to_state[i];
+    statevec = statenum_to_statevec(statenumber);
+    ans(i,i) = 1-abs(statevec[siteind]);
+  }
+
+  return ans;
+}
+
+vector<vector<complex<double>>> Solver::NhExp(vector<double> beta, vector<double> time)
+{
+  vector<Matrix<double,Dynamic,Dynamic>> Nhjeigenbasis;
+
+  Matrix<double,Dynamic,Dynamic> eigenvecsinv;
+
+  eigenvecsinv = eigenvecs.inverse();
+
+  for(int j = 0; j < TWOL; j++)
+  {
+    Nhjeigenbasis.push_back(eigenvecsinv*NhMATRIX(j)*eigenvecs);
+  }
+
+  double minval = eigenvals[0];
+
+  vector<vector<complex<double>>> msum(TWOL, vector<complex<double>>(Nt, zero));
+  vector<vector<complex<double>>> NhExpVal(TWOL, vector<complex<double>>(Nb, zero));
+
+  for(int n = 0; n < maxIndexValue; n++)
+    for(int j = 0; j < TWOL; j++)
+      for(int b = 0; b < Nb; b++)
+      {
+        NhExpVal[j][b] += exp(-beta[b]*(eigenvals[n]-minval))*Nhjeigenbasis[j](n, n);
+      }
+
+  return NhExpVal;
+}
+
+vector<vector<vector<complex<double>>>> Solver::NhCorr(vector<double> beta, vector<double> time)
+{
+  Matrix<double,Dynamic,Dynamic> Nh0eigenbasis;
+  vector<Matrix<double,Dynamic,Dynamic>> Nhjeigenbasis;
+
+  Matrix<double,Dynamic,Dynamic> eigenvecsinv;
+
+  eigenvecsinv = eigenvecs.inverse();
+
+  for(int j = 0; j < TWOL; j++)
+  {
+    Nhjeigenbasis.push_back(eigenvecsinv*NhMATRIX(j)*eigenvecs);
+  }
+  Nh0eigenbasis = Nhjeigenbasis[0];
+
+  double minval = eigenvals[0];
+
+  vector<vector<complex<double>>> msum(TWOL, vector<complex<double>>(Nt, zero));
+  vector<vector<vector<complex<double>>>> ans(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
+
+  for(int n = 0; n < maxIndexValue; n++)
+  {
+    for(int j = 0; j < TWOL; j++)
+      for(int t = 0; t < Nt; t++)
+      {
+        msum[j][t] = zero;
+        for(int m = 0; m < maxIndexValue; m++)
+        {
+          msum[j][t] += Nh0eigenbasis(n, m)*Nhjeigenbasis[j](m, n)*exponential(-(eigenvals[n]-eigenvals[m])*time[t]);
+        }
+      }
+    for(int j = 0; j < TWOL; j++)
+      for(int t = 0; t < Nt; t++)
+        for(int b = 0; b < Nb; b++)
+        {
+          ans[j][b][t] += exp(-beta[b]*(eigenvals[n]-minval))*msum[j][t];
+        }
+  }
+  return ans;
+}
+
 vector<double> Solver::Szmat(int siteind)
 {
   //Sovle it as a sparse matrix maybe? It is diagonal?
@@ -1187,6 +1279,21 @@ void Solver::WriteHoleDens()
   Outfile << endl;
 }
 
+void Solver::WriteHoleCorr(vector<double> beta, vector<vector<complex<double>>> NhNh)
+{
+  ofstream Outfile(dir + "HoleCorr.txt", std::ios_base::app);
+  if (!Outfile.is_open())
+     cout<<"Could not open file" << endl;
+
+  Outfile.precision(17);
+  for(int b = 0; b < beta.size(); b++)
+  {
+    Outfile << beta[b] << "   ";
+    for(int i = 0; i < NhNh.size(); i++) Outfile << NhNh[i][b] << "   ";
+    Outfile << endl;
+  }
+}
+
 
 void Solver::resetdatafiles()
 {
@@ -1208,6 +1315,10 @@ void Solver::resetdatafiles()
 
   ofstream GSHoleDensFile(dir + "GSHoleDensity.txt");
   if (!GSHoleDensFile.is_open())
+    cout<<"Could not open file" << endl;
+
+  ofstream HoleCorr(dir + "HoleCorr.txt");
+  if (!HoleCorr.is_open())
     cout<<"Could not open file" << endl;
 }
 
