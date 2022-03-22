@@ -1,5 +1,5 @@
-LIBDIR = -L$(EBROOTFFTW)/lib
-INCDIR = -I$(HOME)/include -I$(EBROOTEIGEN)/include
+LIBS   = -lm -lstdc++
+INCDIR = -I/Users/cecilieglittum/Documents/include/eigen-eigen-323c052e1731
 
 # C++ compiler
 CCC= $(CXX)
@@ -12,17 +12,17 @@ RUNSOURCES =  run.cpp Makefile Solver.hpp indexstate.hpp BasicFunctions.hpp Quan
 
 
 program: run.o
-			$(CCC) $(LINKOPTS) -o $@ $^  $(LIBS)
+				 $(CCC) $(LINKOPTS) -o $@ $^  $(LIBS)
 
-run.o:	$(RUNSOURCES)
-			$(CCC) $(CCFLAGS) -c -o $@ $<
+run.o:   $(RUNSOURCES)
+				 $(CCC) $(CCFLAGS) -c -o $@ $<
 
 
 
 spotless:
 	make clean
 
-clean:
+clean   :
 	rm -f *.dvi
 	rm -f *.aux
 	rm -f *~
