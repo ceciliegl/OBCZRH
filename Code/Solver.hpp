@@ -78,7 +78,7 @@ public:
   void WritePartition(vector<double> beta, vector<double> partition);
   void WriteCorr(vector<double> beta, vector<double> time, vector<vector<vector<complex<double>>>> z, vector<vector<vector<complex<double>>>> pm);
   void WriteHoleDens();
-  void WriteHoleCorr();
+  void WriteHoleCorr(vector<double> beta, vector<vector<complex<double>>> NhNh);
   void resetdatafiles();
 
 };
