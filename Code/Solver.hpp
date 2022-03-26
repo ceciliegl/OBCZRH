@@ -154,7 +154,7 @@ void Solver::solve()
   nu = 0;
   makebasis();
   fillH();
-  cout << H << endl;
+  //cout << H << endl;
   diagonalise();
 
   mineigvals[0] = eigenvals[0];
