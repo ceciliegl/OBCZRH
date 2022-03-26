@@ -46,7 +46,7 @@ int main(int argc, char const *argv[])
   ReadInputFiles params(folder + "parameters.txt");
   params.generate();
 
-  Solver mysolver(folder, params.Nsites, params.Nh, params.tl, params.tr, params.Jzl, params.Jzr, params.Jpml, params.Jpmr, params.OBC, params.EIGVECS, params.CORR);
+  Solver mysolver(folder, params.Nsites, params.Nh, params.tl, params.tr, params.Jzl, params.Jzr, params.Jpml, params.Jpmr, params.OBC, params.PYROCHLORE, params.EIGVECS, params.CORR);
   //PrintFunctions printer(folder, mysolver);
 
   if(params.RESETFILES){mysolver.resetdatafiles();}

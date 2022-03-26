@@ -31,6 +31,8 @@ public:
 
   bool OBC;
 
+  bool PYROCHLORE;
+
   bool EIGVEC, CORR;
 
   complex<double> zero;
@@ -38,15 +40,17 @@ public:
 
 
   Solver();
-  Solver(string dir0, int L0, int Nh0, double tl0, double tr0, double Jzl0, double Jzr0, double Jpml0, double Jpmr0, bool OBC0, bool EIGVEC0, bool CORR0);
+  Solver(string dir0, int L0, int Nh0, double tl0, double tr0, double Jzl0, double Jzr0, double Jpml0, double Jpmr0, bool OBC0, bool PYROCHLORE0, bool EIGVEC0, bool CORR0);
 
   void solve();
+
   void makebasis();
-  void fillH();
-  void diagonalise();
 
   unsigned int statevec_to_statenum(vector<short int> statevec);
   vector<short int> statenum_to_statevec(unsigned int statenum);
+
+  void fillH();
+  void diagonalise();
 
   Matrix<double,Dynamic,Dynamic> NhMATRIX(int siteind);
   vector<vector<complex<double>>> NhExp(vector<double> beta, vector<double> time);
@@ -78,14 +82,14 @@ public:
   void WritePartition(vector<double> beta, vector<double> partition);
   void WriteCorr(vector<double> beta, vector<double> time, vector<vector<vector<complex<double>>>> z, vector<vector<vector<complex<double>>>> pm);
   void WriteHoleDens();
-  void WriteHoleCorr(vector<double> beta, vector<vector<complex<double>>> NhNh);
+  void WriteHoleCorr(vector<double> beta, vector<double> time, vector<vector<vector<complex<double>>>> NhNh);
   void resetdatafiles();
 
 };
 
 Solver::Solver(){}
 
-Solver::Solver(string dir0, int Nsites0, int Nh0, double tl0, double tr0, double Jzl0, double Jzr0, double Jpml0, double Jpmr0, bool OBC0, bool EIGVEC0, bool CORR0)
+Solver::Solver(string dir0, int Nsites0, int Nh0, double tl0, double tr0, double Jzl0, double Jzr0, double Jpml0, double Jpmr0, bool OBC0, bool PYROCHLORE0, bool EIGVEC0, bool CORR0)
 {
   zero.real(0); zero.imag(0);
 
@@ -106,6 +110,8 @@ Solver::Solver(string dir0, int Nsites0, int Nh0, double tl0, double tr0, double
   Jpmr = Jpmr0;
 
   OBC = OBC0;
+
+  PYROCHLORE = PYROCHLORE0;
 
   EIGVEC = EIGVEC0;
   CORR = CORR0;
@@ -142,12 +148,13 @@ void Solver::solve()
   vector<vector<vector<vector<complex<double>>>>> corrfunczz2(Ns+1, vector<vector<vector<complex<double>>>>(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero))));       //Correlation functions for each magnetisation sector.
   vector<vector<vector<vector<complex<double>>>>> corrfuncpm(Ns+1, vector<vector<vector<complex<double>>>>(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero))));       //Correlation functions for each magnetisation sector.
   vector<vector<vector<vector<complex<double>>>>> corrfuncpm2(Ns+1, vector<vector<vector<complex<double>>>>(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero))));       //Correlation functions for each magnetisation sector.
+  vector<vector<vector<vector<complex<double>>>>> corrfuncNh(Ns+1, vector<vector<vector<complex<double>>>>(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero))));       //Correlation functions for each magnetisation sector.
 
   //Do nu=0 first:
   nu = 0;
   makebasis();
   fillH();
-  //cout << H << endl;
+  cout << H << endl;
   diagonalise();
 
   mineigvals[0] = eigenvals[0];
@@ -165,8 +172,13 @@ void Solver::solve()
 
     cout << "BEFORE SZCORR FOR nu=0" << endl;
 
-    corrfunczz[0] = SzCorr(beta, time); //Only contribution from Sz?
+    corrfunczz[0] = SzCorrMat(beta, time); //Only contribution from Sz?
     for(int j = 0; j < TWOL; j++) for(int b = 0; b < Nb; b++) for(int t = 0; t < Nt; t++) corrfuncpm[0][j][b][t] = zero;
+
+    if (Nh > 1)
+    {
+      corrfuncNh[0] = NhCorr(beta, time);
+    }
   }
 
   Matrix<double, Dynamic, Dynamic> Sminus;
@@ -241,6 +253,11 @@ void Solver::solve()
       corrfuncpm[mynu] = SpmCorrMat(eigenvalsp, eigenvecsp, converttablep, beta, time);
       stop = clock();
 
+      if (Nh > 1)
+      {
+        corrfuncNh[mynu] = NhCorr(beta, time);
+      }
+
       /*for(int j = 0; j < TWOL; j++)
         for(int b = 0; b < Nb; b++)
           for(int t = 0; t < Nt; t++)
@@ -261,6 +278,7 @@ void Solver::solve()
   vector<double> partitionfunction(Nb, 0.0);
   vector<vector<vector<complex<double>>>> corrz(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
   vector<vector<vector<complex<double>>>> corrpm(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
+  vector<vector<vector<complex<double>>>> corrNh(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
   cout << endl;
   cout << endl;
@@ -276,6 +294,7 @@ void Solver::solve()
           //cout << "Here: " << corrfuncpm[i][j] << "   " << exp(-beta*(mineigvals[i]-GS)) << endl;
           corrz[j][b][t] += corrfunczz[i][j][b][t]*exp(-beta[b]*(mineigvals[i]-GS));
           corrpm[j][b][t] += corrfuncpm[i][j][b][t]*exp(-beta[b]*(mineigvalspm[i]-GS));
+          corrNh[j][b][t] += corrfuncNh[i][j][b][t]*exp(-beta[b]*(mineigvals[i]-GS));
         }
     }
 
@@ -286,11 +305,16 @@ void Solver::solve()
         //cout << "Here: " << corrfuncpm[i][j] << "   " << exp(-beta*(mineigvals[i]-GS)) << endl;
         corrz[j][b][t] /= partitionfunction[b];
         corrpm[j][b][t] /= partitionfunction[b];
+        corrNh[j][b][t] /= partitionfunction[b];
       }
 
   cout << "Feridg" << endl;
 
-  if(CORR) WriteCorr(beta, time, corrz, corrpm);
+  if(CORR)
+  {
+    WriteCorr(beta, time, corrz, corrpm);
+    if (Nh > 1) WriteHoleCorr(beta, time, corrNh);
+  }
 
   WritePartition(beta, partitionfunction);
 
@@ -497,7 +521,139 @@ void Solver::fillH()
       innumber %= TWOLpow[Nh-1-h];
     }
 
-    if(OBC)
+    if (PYROCHLORE)
+    {
+      //Diagonal terms are easy: SziSzj for Jleg and Jrung add a Delta to tune z-component?:
+
+      for (int site = 0; site < TWOL-1; site++)
+      {
+        H(i, i) += 0.25*Jzr*instate[site]*instate[site+1];
+        if (site%3 == 0) H(i, i) += 0.25*Jzr*instate[site]*instate[site+3];
+      }
+      for (int site = 0; site < TWOL-2; site++)
+      {
+        if ((site-2)%3 != 0) H(i, i) += 0.25*Jzl*instate[site]*instate[site+2];
+      }
+
+
+      //Off-diagonal terms:
+
+      //Heisenberg part:
+      //Nearest neighbours may flip if they are one up and one down.
+
+      for (int site = 0; site < TWOL-1; site++)
+      {
+        if (instate[site]*instate[site+1] == -1)
+        {
+          instate[site] *= (-1);
+          instate[site+1] *= (-1);
+
+          j = converttable.state_to_index[statevec_to_statenum(instate)];
+
+          H(i,j) += 0.5*Jpmr;
+
+          instate[site] *= (-1);
+          instate[site+1] *= (-1);
+        }
+      }
+      for (int site = 0; site < TWOL-3; site+=3)
+      {
+        if (instate[site]*instate[site+3] == -1)
+        {
+          instate[site] *= (-1);
+          instate[site+3] *= (-1);
+
+          j = converttable.state_to_index[statevec_to_statenum(instate)];
+
+          H(i,j) += 0.5*Jpmr;
+
+          instate[site] *= (-1);
+          instate[site+3] *= (-1);
+        }
+      }
+      for (int site = 0; site < TWOL-2; site++)
+      {
+        if (instate[site]*instate[site+2] == -1)
+        {
+          instate[site] *= (-1);
+          instate[site+2] *= (-1);
+
+          j = converttable.state_to_index[statevec_to_statenum(instate)];
+
+          if ((site-2)%3 != 0) H(i,j) += 0.5*Jpml;
+
+          instate[site] *= (-1);
+          instate[site+2] *= (-1);
+        }
+      }
+
+      //Hopping part:
+      for (int neigh = -1; neigh < 2; neigh += 2)
+      {
+        neigh2 = 2*neigh;
+        for (int hole = 0; hole < Nh; hole++)
+        {
+          holepos = holevec[hole];
+
+          //Hop along rungs
+          neighpos = (holepos+neigh+TWOL)%TWOL;
+
+          if ((neigh == -1 && holepos == 0) || (neigh == +1 && holepos == TWOL-1)) {additionalsign = 0;}
+          else {additionalsign = +1;}
+
+          instate[holepos] = instate[neighpos];
+          instate[neighpos] = 0;
+          j = converttable.state_to_index[statevec_to_statenum(instate)];
+
+          H(i,j) += -tr*additionalsign*abs(instate[holepos]);
+
+          instate[neighpos] = instate[holepos];
+          instate[holepos] = 0;
+
+
+          //Hop along legs.
+          neighpos = (holepos+neigh2+TWOL)%TWOL;
+
+          if ((neigh2 == -2 && holepos == 0) || (neigh2 == +2 && holepos == TWOL-2) || (neigh2 == -2 && holepos == 1) || (neigh2 == +2 && holepos == TWOL-1)) {additionalsign = 0;}
+          else if ((neigh2 == +2 && (holepos-2)%3 == 0) || (neigh2 == -2 && (holepos-4)%3 == 0)) {additionalsign = 0;}
+          else if (instate[(holepos+neigh+TWOL)%TWOL] == 0) {additionalsign = +1;}
+          else {additionalsign = -1;}
+
+          instate[holepos] = instate[neighpos];
+          instate[neighpos] = 0;
+          j = converttable.state_to_index[statevec_to_statenum(instate)];
+          H(i,j) += -tl*additionalsign*abs(instate[holepos]);
+          //cout << i << "   " << j << "   " << -tl*additionalsign*abs(instate[holepos]) << endl;
+
+          instate[neighpos] = instate[holepos];
+          instate[holepos] = 0;
+
+          //Hop along third edge of tetrahedron.
+          if (holepos%3 == 0)
+          {
+            int neigh3 = 3*neigh;
+            neighpos = (holepos+neigh3+TWOL)%TWOL;
+
+            //cout << holepos << "    " << neighpos << endl;
+
+            if ((neigh3 == -3 && holepos == 0) || (neigh3 == +3 && holepos == TWOL-1)) {additionalsign = 0;}
+            else {additionalsign = pow((-1),(abs(instate[holepos+1*neigh])+abs(instate[holepos+2*neigh])));}
+
+            //cout << additionalsign << endl;
+
+            instate[holepos] = instate[neighpos];
+            instate[neighpos] = 0;
+            j = converttable.state_to_index[statevec_to_statenum(instate)];
+            H(i,j) += -tr*additionalsign*abs(instate[holepos]);
+            //cout << i << "   " << j << "   " << -tl*additionalsign*abs(instate[holepos]) << endl;
+
+            instate[neighpos] = instate[holepos];
+            instate[holepos] = 0;
+          }
+        }
+      }
+    }
+    else if(OBC)
     {
       //Diagonal terms are easy: SziSzj for Jleg and Jrung add a Delta to tune z-component?:
 
@@ -525,7 +681,7 @@ void Solver::fillH()
 
           j = converttable.state_to_index[statevec_to_statenum(instate)];
 
-          H(i,j) += Jpmr;
+          H(i,j) += 0.5*Jpmr;
 
           instate[site] *= (-1);
           instate[site+1] *= (-1);
@@ -614,7 +770,7 @@ void Solver::fillH()
 
           j = converttable.state_to_index[statevec_to_statenum(instate)];
 
-          H(i,j) += Jpmr;
+          H(i,j) += 0.5*2*Jpmr;
 
           instate[site] *= (-1);
           instate[(site+1)%TWOL] *= (-1);
@@ -1279,7 +1435,7 @@ void Solver::WriteHoleDens()
   Outfile << endl;
 }
 
-void Solver::WriteHoleCorr(vector<double> beta, vector<vector<complex<double>>> NhNh)
+void Solver::WriteHoleCorr(vector<double> beta, vector<double> time, vector<vector<vector<complex<double>>>> NhNh)
 {
   ofstream Outfile(dir + "HoleCorr.txt", std::ios_base::app);
   if (!Outfile.is_open())
@@ -1287,11 +1443,12 @@ void Solver::WriteHoleCorr(vector<double> beta, vector<vector<complex<double>>> 
 
   Outfile.precision(17);
   for(int b = 0; b < beta.size(); b++)
-  {
-    Outfile << beta[b] << "   ";
-    for(int i = 0; i < NhNh.size(); i++) Outfile << NhNh[i][b] << "   ";
-    Outfile << endl;
-  }
+    for(int t = 0; t < time.size(); t++)
+    {
+      Outfile << beta[b] << "   " << time[t] << "   ";
+      for(int i = 0; i < NhNh.size(); i++) Outfile << NhNh[i][b][t] << "   ";
+      Outfile << endl;
+    }
 }
 
 
