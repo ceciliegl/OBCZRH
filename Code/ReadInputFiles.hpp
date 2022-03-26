@@ -13,6 +13,8 @@ public:
 
   bool OBC;
 
+  bool PYROCHLORE;
+
   bool EIGVECS, CORR;
   bool RESETFILES;
 
@@ -41,6 +43,7 @@ void ReadInputFiles::generate()
   parameters >> nothing >> nothing >> Nh;
   parameters >> nothing >> nothing >> tl; parameters >> nothing >> nothing >> tr; parameters >> nothing >> nothing >> Jzl; parameters >> nothing >> nothing >> Jzr; parameters >> nothing >> nothing >> Jpml; parameters >> nothing >> nothing >> Jpmr;
   parameters >> nothing >> nothing >> OBC;
+  parameters >> nothing >> nothing >> PYROCHLORE;
   parameters >> nothing >> nothing >> EIGVECS;
   parameters >> nothing >> nothing >> CORR;
   parameters >> nothing >> nothing >> RESETFILES;
