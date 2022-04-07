@@ -376,18 +376,18 @@ void Solver::solve()
 
   if(ZEROCORR)
   {
-    WriteCorr(beta, time, corrzZERO, corrpmZERO, "ZEROCORR");
-    if (Nh > 1) WriteHoleCorr(beta, time, corrNhZERO, "ZEROCORR");
+    WriteCorr(beta, time, corrzZERO, corrpmZERO, "Corr.txt");
+    if (Nh > 1) WriteHoleCorr(beta, time, corrNhZERO, "HoleCorr.txt");
   }
   if(NNCORR)
   {
-    WriteCorr(beta, time, corrzNN, corrpmNN, "NNCORR");
-    if (Nh > 1) WriteHoleCorr(beta, time, corrNhNN, "NNCORR");
+    WriteCorr(beta, time, corrzNN, corrpmNN, "CorrNN.txt");
+    if (Nh > 1) WriteHoleCorr(beta, time, corrNhNN, "HoleCorrNN.txt");
   }
   if(MIDCORR)
   {
-    WriteCorr(beta, time, corrzMID, corrpmMID, "MIDCORR");
-    if (Nh > 1) WriteHoleCorr(beta, time, corrNhMID, "MIDCORR");
+    WriteCorr(beta, time, corrzMID, corrpmMID, "CorrMID.txt");
+    if (Nh > 1) WriteHoleCorr(beta, time, corrNhMID, "HoleCorrMID.txt");
   }
 
   WritePartition(beta, partitionfunction);
@@ -1690,30 +1690,9 @@ void Solver::WriteCorr(vector<double> beta, vector<double> time, vector<vector<v
 {
   cout << "Starter her" << endl;
 
-  ofstream Outfile;
-
-  if (file == "ZEROCORR")
-  {
-    Outfile = ofstream(dir + "Corr.txt", std::ios_base::app);
-    if (!Outfile.is_open())
-       cout<<"Could not open file" << endl;
-  }
-  else if (file == "NNCORR")
-  {
-    Outfile = ofstream(dir + "CorrNN.txt", std::ios_base::app);
-    if (!Outfile.is_open())
-       cout<<"Could not open file" << endl;
-  }
-  else if (file == "MIDCORR")
-  {
-    Outfile = ofstream(dir + "CorrMID.txt", std::ios_base::app);
-    if (!Outfile.is_open())
-       cout<<"Could not open file" << endl;
-  }
-  else
-  {
-    cout << "NO VALID FILE ARGUMENT FOR WriteCorr." << endl;
-  }
+  ofstream Outfile(dir + "Corr.txt", std::ios_base::app);
+  if (!Outfile.is_open())
+     cout<<"Could not open file" << endl;
 
   cout << "Inni her" << endl;
 
@@ -1767,30 +1746,9 @@ void Solver::WriteHoleDens()
 void Solver::WriteHoleCorr(vector<double> beta, vector<double> time, vector<vector<vector<complex<double>>>> NhNh, string file)
 {
 
-  ofstream Outfile;
-
-  if (file == "ZEROCORR")
-  {
-    Outfile = ofstream(dir + "HoleCorr.txt", std::ios_base::app);
-    if (!Outfile.is_open())
-       cout<<"Could not open file" << endl;
-  }
-  else if (file == "NNCORR")
-  {
-    Outfile = ofstream(dir + "HoleCorrNN.txt", std::ios_base::app);
-    if (!Outfile.is_open())
-       cout<<"Could not open file" << endl;
-  }
-  else if (file == "MIDCORR")
-  {
-    Outfile = ofstream(dir + "HoleCorrMID.txt", std::ios_base::app);
-    if (!Outfile.is_open())
-       cout<<"Could not open file" << endl;
-  }
-  else
-  {
-    cout << "NO VALID FILE ARGUMENT FOR WriteHoleCorr." << endl;
-  }
+  ofstream Outfile(dir + file, std::ios_base::app);
+  if (!Outfile.is_open())
+     cout<<"Could not open file" << endl;
 
   Outfile.precision(17);
   for(int b = 0; b < beta.size(); b++)
