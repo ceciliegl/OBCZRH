@@ -66,11 +66,11 @@ for run_number in run_numbers:
     for line in paramsfile:
         words = line.split()
         if len(words) > 0:
-            if words[0] == "L":
-                L = int(words[-1])
+            if words[0] == "Nsites":
+                Nsites = int(words[-1])
                 break
 
-    print("L = %d" % L)
+    print("Nsites = %d" % Nsites)
 
     paramsfile.close()
 
@@ -95,10 +95,10 @@ for run_number in run_numbers:
 
     infile = open("Run" + run_number + "/Corr.txt", "r")
 
-    corrzreal = np.zeros((2*L, Nb, Nt))
-    corrzimag = np.zeros((2*L, Nb, Nt))
-    corrpmreal = np.zeros((2*L, Nb, Nt))
-    corrpmimag = np.zeros((2*L, Nb, Nt))
+    corrzreal = np.zeros((Nsites, Nb, Nt))
+    corrzimag = np.zeros((Nsites, Nb, Nt))
+    corrpmreal = np.zeros((Nsites, Nb, Nt))
+    corrpmimag = np.zeros((Nsites, Nb, Nt))
 
     for line in infile:
         words = line.split()
@@ -109,9 +109,9 @@ for run_number in run_numbers:
         tind = np.where(time == t)[0]
 
         words = words[2:]
-        for i in range(2*L):
+        for i in range(Nsites):
             cz = [float(word) for word in words[i][1:-1].split(",")]
-            cpm = [float(word) for word in words[2*L+i][1:-1].split(",")]
+            cpm = [float(word) for word in words[Nsites+i][1:-1].split(",")]
 
             corrzreal[i,bind,tind] = cz[0]
             corrzimag[i,bind,tind] = cz[1]
@@ -120,7 +120,7 @@ for run_number in run_numbers:
 
     plt.figure()
     for b in range(len(beta)):
-        plt.plot(range(2*L), 0.5*corrpmreal[:,b,0], label=r"$\beta = %.2f$" % beta[b])
+        plt.plot(range(Nsites), 0.5*corrpmreal[:,b,0], label=r"$\beta = %.2f$" % beta[b])
     plt.xlabel(r"site $j$")
     plt.ylabel(r"$\frac{1}{2}\langle S^x_{0}S^x_{j} + S^y_{0}S^y_{j} \rangle$")
     plt.title("Run"+ run_number)
@@ -129,7 +129,7 @@ for run_number in run_numbers:
 
     plt.figure()
     for b in range(len(beta)):
-        plt.plot(range(2*L), corrzreal[:,b,0], label=r"$\beta = %.2f$" % beta[b])
+        plt.plot(range(Nsites), corrzreal[:,b,0], label=r"$\beta = %.2f$" % beta[b])
     plt.xlabel(r"site $j$")
     plt.ylabel(r"$\langle S^z_{0}S^z_{j} \rangle$")
     plt.title("Run"+ run_number)

@@ -15,7 +15,7 @@ public:
 
   bool PYROCHLORE;
 
-  bool EIGVECS, CORR;
+  bool EIGVECS, ZEROCORR, NNCORR, MIDCORR;
   bool RESETFILES;
 
   ReadInputFiles(string filename_param);
@@ -45,7 +45,9 @@ void ReadInputFiles::generate()
   parameters >> nothing >> nothing >> OBC;
   parameters >> nothing >> nothing >> PYROCHLORE;
   parameters >> nothing >> nothing >> EIGVECS;
-  parameters >> nothing >> nothing >> CORR;
+  parameters >> nothing >> nothing >> ZEROCORR;
+  parameters >> nothing >> nothing >> NNCORR;
+  parameters >> nothing >> nothing >> MIDCORR;
   parameters >> nothing >> nothing >> RESETFILES;
 
   parameters.close();

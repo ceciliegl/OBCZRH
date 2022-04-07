@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-mainproject = "Pyrochlore"  #Set to zero if only one project.
-project = "2holes2tetrahedra"
+mainproject = "TwoHolesMIDCORR"  #Set to zero if only one project.
+project = "N9"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 5
+runmax = 18
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,7 +16,7 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 7*np.ones(nruns, int)
+Nsites = 9*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
@@ -25,10 +25,13 @@ Nh = 2*np.ones(nruns, int);
 OBCx = 1
 OBCy = 1
 
-PYROCHLORE = 1
+PYROCHLORE = 0
+if PYROCHLORE:
+    OBCx = 1
+    OBCy = 1
 
 #EXCHANGE#
-tl     = np.linspace(0, 5, nruns)#np.ones(nruns)
+tl     = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11.7, 11.75, 11.8, 11.9, 12, 20, 100]) #np.linspace(0, 5, nruns)#np.ones(nruns)
 tr     = tl
 Jzl    = -np.ones(nruns)
 Jzr    = Jzl
@@ -47,7 +50,9 @@ if not OBCx and OBCy:
     Jpmr = 0.5*Jpmr
 
 EIGVECS = 1         #Compute eigenvectors?
-CORR = 1            #Compute correlations?
+ZEROCORR = 1        #Compute all correlations for site zero?
+NNCORR = 1          #Compute all nearest neighbour correlations?
+MIDCORR = 1         #Compute all correlations for middle site?
 
 RESETOLDFILES = 1
 
@@ -89,7 +94,7 @@ runsub.write("#cd $SUBMITDIR\n")
 runsub.write("#rsync -av $SUBMITDIR/ $SCRATCH/ --exclude=rundir\n")
 runsub.write("#cd $SCRATCH\n")
 runsub.write("echo Running program.....\n")
-runsub.write("$HOME/Documents/ZRHeisenberg/Code/program " + totalproject + " $SLURM_ARRAY_TASK_ID\n")
+runsub.write("$HOME/Documents/OBCZRH/Code/program " + totalproject + " $SLURM_ARRAY_TASK_ID\n")
 
 
 
@@ -150,8 +155,16 @@ for run in range(runmin, nruns + runmin):
     outfile.write(str(EIGVECS))
     outfile.write("\n")
 
-    outfile.write("CORR = ")
-    outfile.write(str(CORR))
+    outfile.write("ZEROCORR = ")
+    outfile.write(str(ZEROCORR))
+    outfile.write("\n")
+
+    outfile.write("NNCORR = ")
+    outfile.write(str(NNCORR))
+    outfile.write("\n")
+
+    outfile.write("NNCORR = ")
+    outfile.write(str(MIDCORR))
     outfile.write("\n")
 
     outfile.write("RESETOLDFILES = ")
