@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-mainproject = "Pyrochlore"  #Set to zero if only one project.
-project = "2holes2tetrahedra"
+mainproject = "TwoHolesOBCxPBCy"  #Set to zero if only one project.
+project = "N11"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 5
+runmax = 200
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,19 +16,19 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 7*np.ones(nruns, int)
+Nsites = 11*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
 Nh = 2*np.ones(nruns, int);
 
 OBCx = 1
-OBCy = 1
+OBCy = 0
 
-PYROCHLORE = 1
+PYROCHLORE = 0
 
 #EXCHANGE#
-tl     = np.linspace(0, 5, nruns)#np.ones(nruns)
+tl     = np.linspace(0, 10, nruns)#np.ones(nruns)
 tr     = tl
 Jzl    = -np.ones(nruns)
 Jzr    = Jzl
