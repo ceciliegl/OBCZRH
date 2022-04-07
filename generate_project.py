@@ -23,7 +23,7 @@ runmax = runmin + (nruns-1)
 Nh = 2*np.ones(nruns, int);
 
 OBCx = 1
-OBCy = 1
+OBCy = 0
 
 PYROCHLORE = 0
 if PYROCHLORE:
