@@ -1690,7 +1690,7 @@ void Solver::WriteCorr(vector<double> beta, vector<double> time, vector<vector<v
 {
   cout << "Starter her" << endl;
 
-  ofstream Outfile(dir + "Corr.txt", std::ios_base::app);
+  ofstream Outfile(dir + file, std::ios_base::app);
   if (!Outfile.is_open())
      cout<<"Could not open file" << endl;
 
