@@ -2,12 +2,12 @@ import os
 import numpy as np
 
 mainproject = "TwoHolesMIDCORRBettervaluesoft"  #Set to zero if only one project.
-project = "N6"
+project = "N7"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 20
+runmax = 19
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,7 +16,7 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 6*np.ones(nruns, int)
+Nsites = 7*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
@@ -31,7 +31,7 @@ if PYROCHLORE:
     OBCy = 1
 
 #EXCHANGE#
-tl     = np.array([0, 0.25, 0.5, 0.75, 1, 1.05, 1.075, 1.1, 1.15, 1.2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 100]) #np.linspace(0, 5, nruns)#np.ones(nruns)
+tl     = np.array([0, 0.25, 0.5, 0.75, 1, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 2, 3, 4, 5, 6, 7, 10, 20, 100]) #np.linspace(0, 5, nruns)#np.ones(nruns)
 tr     = tl
 Jzl    = -np.ones(nruns)
 Jzr    = Jzl
