@@ -24,13 +24,7 @@ def get_data(filename, variables):
     return df
     #using pandas to read the data files
 
-def Sz0Sz1(beta, FM):
-    if FM: return 0.25*(1.-np.exp(-4.*beta))/(3.+np.exp(-4.*beta))
-    else: return 0.25*(np.exp(-4.*beta)-1.)/(1.+3.*np.exp(-4.*beta))
 
-def Spm0Spm1(beta, FM):
-    if FM: return 0.5*(1.-np.exp(-4.*beta))/(3.+np.exp(-4.*beta))
-    else: return 0.5*(np.exp(-4.*beta)-1.)/(1.+3.*np.exp(-4.*beta))
 
 for run_number in run_numbers:
     if float(run_number) < 10:
@@ -74,12 +68,12 @@ for run_number in run_numbers:
 
     paramsfile.close()
 
-    infile = open("Run" + run_number + "/Corr.txt", "r")
+    infileZERO = open("Run" + run_number + "/HoleCorr.txt", "r")
 
     beta = []
     time = []
 
-    for line in infile:
+    for line in infileZERO:
         words = line.split()
         beta.append(float(words[0]))
         time.append(float(words[1]))
@@ -90,17 +84,21 @@ for run_number in run_numbers:
     Nb = len(beta)
     Nt = len(time)
 
-    infile.close()
+    infileZERO.close()
 
 
-    infile = open("Run" + run_number + "/Corr.txt", "r")
+    infileZERO = open("Run" + run_number + "/HoleCorr.txt", "r")
+    infileNN = open("Run" + run_number + "/HoleCorrNN.txt", "r")
+    infileMID = open("Run" + run_number + "/HoleCorrMID.txt", "r")
 
-    corrzreal = np.zeros((Nsites, Nb, Nt))
-    corrzimag = np.zeros((Nsites, Nb, Nt))
-    corrpmreal = np.zeros((Nsites, Nb, Nt))
-    corrpmimag = np.zeros((Nsites, Nb, Nt))
+    corrrealZERO = np.zeros((Nsites, Nb, Nt))
+    corrimagZERO = np.zeros((Nsites, Nb, Nt))
+    corrrealNN = np.zeros((Nsites, Nb, Nt))
+    corrimagNN = np.zeros((Nsites, Nb, Nt))
+    corrrealMID = np.zeros((Nsites, Nb, Nt))
+    corrimagMID = np.zeros((Nsites, Nb, Nt))
 
-    for line in infile:
+    for line in infileZERO:
         words = line.split()
         b = float(words[0])
         t = float(words[1])
@@ -110,59 +108,58 @@ for run_number in run_numbers:
 
         words = words[2:]
         for i in range(Nsites):
-            cz = [float(word) for word in words[i][1:-1].split(",")]
-            cpm = [float(word) for word in words[Nsites+i][1:-1].split(",")]
+            c = [float(word) for word in words[i][1:-1].split(",")]
 
-            corrzreal[i,bind,tind] = cz[0]
-            corrzimag[i,bind,tind] = cz[1]
-            corrpmreal[i,bind,tind] = cpm[0]
-            corrpmimag[i,bind,tind] = cpm[1]
+            corrrealZERO[i,bind,tind] = c[0]
+            corrimagZERO[i,bind,tind] = c[1]
+
+    for line in infileNN:
+        words = line.split()
+        b = float(words[0])
+        t = float(words[1])
+
+        bind = np.where(beta == b)[0]
+        tind = np.where(time == t)[0]
+
+        words = words[2:]
+        for i in range(Nsites):
+            c = [float(word) for word in words[i][1:-1].split(",")]
+
+            corrrealNN[i,bind,tind] = c[0]
+            corrimagNN[i,bind,tind] = c[1]
+
+    for line in infileMID:
+        words = line.split()
+        b = float(words[0])
+        t = float(words[1])
+
+        bind = np.where(beta == b)[0]
+        tind = np.where(time == t)[0]
+
+        words = words[2:]
+        for i in range(Nsites):
+            c = [float(word) for word in words[i][1:-1].split(",")]
+
+            corrrealMID[i,bind,tind] = c[0]
+            corrimagMID[i,bind,tind] = c[1]
+
 
     plt.figure()
     for b in range(len(beta)):
-        plt.plot(range(Nsites), 0.5*corrpmreal[:,b,0], label=r"$\beta = %.2f$" % beta[b])
-    plt.xlabel(r"site $j$")
-    plt.ylabel(r"$\frac{1}{2}\langle S^x_{0}S^x_{j} + S^y_{0}S^y_{j} \rangle$")
-    plt.title("Run"+ run_number)
-    #plt.title("One hole, Ising FM, t = 10")
-    plt.legend()
-
-    plt.figure()
-    for b in range(len(beta)):
-        plt.plot(range(Nsites), corrzreal[:,b,0], label=r"$\beta = %.2f$" % beta[b])
+        plt.plot(range(Nsites), corrrealZERO[:,b,0], label=r"$\beta = %.2f$" % beta[b])
     plt.xlabel(r"site $j$")
     plt.ylabel(r"$\langle S^z_{0}S^z_{j} \rangle$")
     plt.title("Run"+ run_number)
     #plt.title("One hole, Ising FM, t = 10")
     plt.legend()
 
+    plt.figure()
+    for b in range(len(beta)):
+        plt.plot(range(Nsites), corrrealMID[:,b,0], label=r"$\beta = %.2f$" % beta[b])
+    plt.xlabel(r"site $j$")
+    plt.ylabel(r"$\langle S^z_{MID}S^z_{j} \rangle$")
+    plt.title("Run"+ run_number)
+    #plt.title("One hole, Ising FM, t = 10")
+    plt.legend()
+
 plt.show()
-
-if __name__ == "_main_":
-
-    FM = False
-
-    plt.figure(1)
-    plt.plot(beta, corrzreal[1,:,0], 'o', label='Real')
-    plt.plot(beta, corrzimag[1,:,0], 'o', label='Imag')
-    plt.plot(beta, Sz0Sz1(beta, FM), label='Analytical')
-    plt.xlabel(r"$\beta$", fontsize=14)
-    plt.ylabel(r"Corrz", fontsize=14)
-    plt.legend()
-
-    plt.figure(2)
-    plt.plot(beta, corrpmreal[1,:,0], 'o', label='Real')
-    plt.plot(beta, corrpmimag[1,:,0], 'o', label='Imag')
-    plt.plot(beta, Spm0Spm1(beta, FM), label='Analytical')
-    plt.xlabel(r"$\beta$", fontsize=14)
-    plt.ylabel(r"Corrpm", fontsize=14)
-    plt.legend()
-
-    plt.figure(3)
-    plt.plot(Zbeta, Z, 'o', label='Numerical')
-    plt.plot(Zbeta, (3.+np.exp(-4.*beta))*FM + (3*np.exp(-4*Zbeta) + 1)*(1-FM), label='Analytical')
-    plt.xlabel(r"$\beta$", fontsize=14)
-    plt.ylabel(r"Z", fontsize=14)
-    plt.legend()
-
-    plt.show()

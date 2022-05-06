@@ -78,7 +78,7 @@ for run in runs:
     energies.append(eigvals)
 
 
-    infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/CorrNN.txt'), 'r')
+    infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/Corr.txt'), 'r')
 
     beta = []
     time = []
@@ -97,7 +97,7 @@ for run in runs:
     infile.close()
 
 
-    infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/CorrNN.txt'), 'r')
+    infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/Corr.txt'), 'r')
 
     corrzreal = np.zeros((Nsites, Nb, Nt))
     corrzimag = np.zeros((Nsites, Nb, Nt))
@@ -138,6 +138,23 @@ zzcorrs = zzcorrs[indices,:,:,:]
 xxyycorrs = 0.5*xxyycorrs[indices,:,:,:]
 
 
+#Three site cluster analytical results:
+def ZThreeSites(beta, t, J):
+    return 4*np.exp(-beta*(J/4.-t)) + 2*np.exp(-beta*(J/4.+2*t)) + np.exp(-beta*(-J/4.-2*t)) + 2*np.exp(-beta*(-J/4.-t)) + 2*np.exp(-beta*(-J/4.+t)) + np.exp(-beta*(-J/4.+2*t))
+
+
+def S0zS1zThreeSites(beta, t):
+    J = -1.
+    return (1./12.)*(4.*np.exp(-beta*(J/4.-t)) + 2*np.exp(-beta*(J/4.+2*t)) - np.exp(-beta*(-J/4.-2*t)) - 2*np.exp(-beta*(-J/4.-t)) - 2*np.exp(-beta*(-J/4.+t)) - np.exp(-beta*(-J/4.+2*t)))/ZThreeSites(beta, t, J)
+
+
+def S0pmS1pmThreeSites(beta, t):
+    J = -1.
+    return (1./12.)*(-np.exp(-beta*(-J/4.-2*t)) + 2*np.exp(-beta*(-J/4.-t)) - 2*np.exp(-beta*(-J/4.+t)) + np.exp(-beta*(-J/4.+2*t)))/ZThreeSites(beta, t, J)
+
+
+#print(S0zS1zThreeSites(100,0.4))
+
 #Plot energy evolution as function of t.
 
 """
@@ -171,43 +188,18 @@ plt.ylabel(r"Energy")
 
 #Also for each t, plot xy and zz correlations for nearest-neighbour.
 
-
 plt.figure(2)
 
 for i in range(Nb):
-    plt.plot(t, zzcorrs[:,0,i,0], '.-', label=beta[i])
+    plt.plot(t, zzcorrs[:,1,i,0], '.-', label=beta[i])
     """if dir == 'OneHole/ThreeSiteCluster':
         plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
 plt.xlabel(r"$t$")
 plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
-plt.title(r"Edge correlations")
 plt.legend()
 
 
 plt.figure(3)
-
-for i in range(Nb):
-    plt.plot(t, np.min(zzcorrs[:,:-1,i,0], axis=1), '.-', label=beta[i])
-    """if dir == 'OneHole/ThreeSiteCluster':
-        plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
-plt.xlabel(r"$t$")
-plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
-plt.title(r"Minimum NN correlations")
-plt.legend()
-
-plt.figure(4)
-
-for i in range(Nb):
-    plt.plot(t, np.max(zzcorrs[:,:-1,i,0], axis=1), '.-', label=beta[i])
-    """if dir == 'OneHole/ThreeSiteCluster':
-        plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
-plt.xlabel(r"$t$")
-plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
-plt.title(r"Maximum NN correlations")
-plt.legend()
-
-
-plt.figure(5)
 
 for i in range(Nb):
     plt.plot(t, xxyycorrs[:,1,i,0], '.-', label=beta[i])

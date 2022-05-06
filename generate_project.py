@@ -1,6 +1,7 @@
 import os
 import numpy as np
 
+<<<<<<< HEAD
 mainproject = "Pyrochlore"  #Set to zero if only one project.
 project = "2holes3tetrahedraADDITIONAL"
 description = "Testing."
@@ -8,6 +9,15 @@ jobname = "myjob"
 time = "5:00:00"
 runmin = 17
 runmax = 21
+=======
+mainproject = "TwoHolesMIDCORRBettervaluesoft"  #Set to zero if only one project.
+project = "N7"
+description = "Testing."
+jobname = "myjob"
+time = "5:00:00"
+runmin = 0
+runmax = 19
+>>>>>>> ef3c47272fadb627936e0457744360c245e4d47c
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -25,10 +35,17 @@ Nh = 2*np.ones(nruns, int);
 OBCx = 1
 OBCy = 1
 
-PYROCHLORE = 1
+PYROCHLORE = 0
+if PYROCHLORE:
+    OBCx = 1
+    OBCy = 1
 
 #EXCHANGE#
+<<<<<<< HEAD
 tl     = np.linspace(0.85, 1.05, nruns)#np.ones(nruns)
+=======
+tl     = np.array([0, 0.25, 0.5, 0.75, 1, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 2, 3, 4, 5, 6, 7, 10, 20, 100]) #np.linspace(0, 5, nruns)#np.ones(nruns)
+>>>>>>> ef3c47272fadb627936e0457744360c245e4d47c
 tr     = tl
 Jzl    = -np.ones(nruns)
 Jzr    = Jzl
@@ -47,7 +64,9 @@ if not OBCx and OBCy:
     Jpmr = 0.5*Jpmr
 
 EIGVECS = 1         #Compute eigenvectors?
-CORR = 1            #Compute correlations?
+ZEROCORR = 1        #Compute all correlations for site zero?
+NNCORR = 1          #Compute all nearest neighbour correlations?
+MIDCORR = 1         #Compute all correlations for middle site?
 
 RESETOLDFILES = 1
 
@@ -150,8 +169,16 @@ for run in range(runmin, nruns + runmin):
     outfile.write(str(EIGVECS))
     outfile.write("\n")
 
-    outfile.write("CORR = ")
-    outfile.write(str(CORR))
+    outfile.write("ZEROCORR = ")
+    outfile.write(str(ZEROCORR))
+    outfile.write("\n")
+
+    outfile.write("NNCORR = ")
+    outfile.write(str(NNCORR))
+    outfile.write("\n")
+
+    outfile.write("NNCORR = ")
+    outfile.write(str(MIDCORR))
     outfile.write("\n")
 
     outfile.write("RESETOLDFILES = ")
