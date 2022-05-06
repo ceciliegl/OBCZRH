@@ -35,6 +35,7 @@ params.close()
 
 t = []
 energies = []
+sectors = []
 zzcorrs = []
 xxyycorrs = []
 
@@ -49,6 +50,23 @@ for run in runs:
             if words[0] == "Nsites":
                 Nsites = int(words[-1])
                 break
+
+    params.close()
+
+    params = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/parameters.txt'))
+
+    for line in params:
+        words = line.split()
+        if len(words) > 0:
+            if words[0].strip() == "NNCORR":
+                NNCORR = float(words[-1])
+                if NNCORR == 0:
+                    NNCORR = False
+                else:
+                    NNCORR = True
+                break
+            else:
+                NNCORR = False
 
     params.close()
 
@@ -72,13 +90,27 @@ for run in runs:
     infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/eigvals.txt'), 'r')
 
     for line in infile:
-        nowvals = [float(i) for i in line.split()[1:]]
+        words = line.split()
+        nowvals = [float(i) for i in words[1:]]
         eigvals.append(nowvals)
 
     energies.append(eigvals)
 
+    minimum = sys.maxsize
+    i_min, j_min = 0, 0
 
-    infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/CorrNN.txt'), 'r')
+    for i, a in enumerate(eigvals):
+        for j, b in enumerate(a):
+            if b and b < minimum - 1e-10:
+                i_min, j_min, minimum = i, j, b
+
+    sectors.append(i_min)
+
+
+    if NNCORR:
+        infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/CorrNN.txt'), 'r')
+    else:
+        infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/Corr.txt'), 'r')
 
     beta = []
     time = []
@@ -97,7 +129,10 @@ for run in runs:
     infile.close()
 
 
-    infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/CorrNN.txt'), 'r')
+    if NNCORR:
+        infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/CorrNN.txt'), 'r')
+    else:
+        infile = open(os.path.expanduser('~/Documents/OBCZRH/Data/' + dir + '/' + run + '/Corr.txt'), 'r')
 
     corrzreal = np.zeros((Nsites, Nb, Nt))
     corrzimag = np.zeros((Nsites, Nb, Nt))
@@ -133,6 +168,8 @@ xxyycorrs = np.array(xxyycorrs)
 t = np.array(t)
 indices = np.argsort(t)
 t = t[indices]
+sectors = np.array(sectors)
+sectors = sectors[indices]
 
 zzcorrs = zzcorrs[indices,:,:,:]
 xxyycorrs = 0.5*xxyycorrs[indices,:,:,:]
@@ -171,50 +208,69 @@ plt.ylabel(r"Energy")
 
 #Also for each t, plot xy and zz correlations for nearest-neighbour.
 
+if NNCORR:
 
-plt.figure(2)
+    plt.figure(2)
 
-for i in range(Nb):
-    plt.plot(t, zzcorrs[:,0,i,0], '.-', label=beta[i])
-    """if dir == 'OneHole/ThreeSiteCluster':
-        plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
-plt.xlabel(r"$t$")
-plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
-plt.title(r"Edge correlations")
-plt.legend()
+    for i in range(Nb):
+        plt.plot(t, zzcorrs[:,0,i,0], '.-', label=beta[i])
+        """if dir == 'OneHole/ThreeSiteCluster':
+            plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
+    plt.xlabel(r"$t$")
+    plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
+    plt.title(r"Edge correlations")
+    plt.legend()
 
 
-plt.figure(3)
+    """plt.figure(3)
 
-for i in range(Nb):
-    plt.plot(t, np.min(zzcorrs[:,:-1,i,0], axis=1), '.-', label=beta[i])
-    """if dir == 'OneHole/ThreeSiteCluster':
-        plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
-plt.xlabel(r"$t$")
-plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
-plt.title(r"Minimum NN correlations")
-plt.legend()
+    for i in range(Nb):
+        plt.plot(t, np.min(zzcorrs[:,:-1,i,0], axis=1), '.-', label=beta[i])
+        #if dir == 'OneHole/ThreeSiteCluster':
+        #    plt.plot(t, S0zS1zThreeSites(beta[i], t))
+    plt.xlabel(r"$t$")
+    plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
+    plt.title(r"Minimum NN correlations")
+    plt.legend()
+    """
 
-plt.figure(4)
+    plt.figure(4)
 
-for i in range(Nb):
-    plt.plot(t, np.max(zzcorrs[:,:-1,i,0], axis=1), '.-', label=beta[i])
-    """if dir == 'OneHole/ThreeSiteCluster':
-        plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
-plt.xlabel(r"$t$")
-plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
-plt.title(r"Maximum NN correlations")
-plt.legend()
+    for i in range(Nb):
+        plt.plot(t, np.max(zzcorrs[:,:-1,i,0], axis=1), '.-', label=beta[i])
+        plt.plot(t, 1./12.*np.ones(len(t)), '-')
+        #if dir == 'OneHole/ThreeSiteCluster':
+        #    plt.plot(t, S0zS1zThreeSites(beta[i], t))
+    plt.xlabel(r"$t$")
+    plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
+    plt.title(r"Maximum NN correlations")
+    plt.legend()
+
+else:
+    for i in range(Nb):
+        plt.plot(t, zzcorrs[:,1,i,0], '.-', label=beta[i])
+        """if dir == 'OneHole/ThreeSiteCluster':
+            plt.plot(t, S0zS1zThreeSites(beta[i], t))"""
+    plt.xlabel(r"$t$")
+    plt.ylabel(r"$\langle S_0^z S_1^z \rangle$")
+    plt.title(r"Edge correlations")
+    plt.legend()
 
 
 plt.figure(5)
 
 for i in range(Nb):
     plt.plot(t, xxyycorrs[:,1,i,0], '.-', label=beta[i])
-    """if dir == 'OneHole/ThreeSiteCluster':
-        plt.plot(t, S0pmS1pmThreeSites(beta[i], t))"""
+    #if dir == 'OneHole/ThreeSiteCluster':
+    #    plt.plot(t, S0pmS1pmThreeSites(beta[i], t))
 plt.xlabel(r"$t$")
 plt.ylabel(r"$\frac{1}{2}\langle S_0^x S_1^x + S_0^y S_1^y \rangle$")
 plt.legend()
+
+
+plt.figure(6)
+plt.plot(t, sectors, '.-')
+plt.xlabel(r"$t$")
+plt.ylabel(r"Sector")
 
 plt.show()

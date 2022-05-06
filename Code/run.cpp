@@ -14,13 +14,14 @@ using namespace std;
 #include "indexstate.hpp"
 #include "Solver.hpp"
 #include "Quantities.hpp"
-#include "PrintFunctions.hpp"
 
 
 // Symmetry: Conserved total Sz. So I can block diagonalise H into sectors of constant total Sz.
 
 int main(int argc, char const *argv[])
 {
+  double starttime = clock();
+
   string project = argv[1];
   string run_number;
 
@@ -47,6 +48,7 @@ int main(int argc, char const *argv[])
   params.generate();
 
   Solver mysolver(folder, params);
+  //auto inttostringfunc = std::bind(&Solver::myinttostring, mysolver, std::placeholders::_1);
   //PrintFunctions printer(folder, mysolver);
 
   if(params.RESETFILES){mysolver.resetdatafiles();}
@@ -184,6 +186,9 @@ int main(int argc, char const *argv[])
   vector<short int> b = solver.statenum_to_statevec(solver.statevec_to_statenum(a));
   for (int i = 0; i < 2*L; i++) cout << b[i] << "   ";*/
 
+  double endtime = clock();
+
+  cout << "Total time = " << (endtime-starttime)/CLOCKS_PER_SEC << endl;
 
   return 0;
 }

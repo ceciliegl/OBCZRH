@@ -2,13 +2,19 @@
 #define SOLVER
 
 
+const double PI=3.14159265358979323846264338;
+const double TWOPI=2.*PI;
+const double SQRTTHREEOVERTWO = 0.86602540378443864676;
+
 // Use Eigen to diagonalize? Or LAPACK? Try Eigen.
 #include <Eigen/Dense>
 using namespace Eigen;
 
 #include "Quantities.hpp"
+#include "makepretty.h"
 
 #include <fstream>
+
 
 class Solver
 {
@@ -33,10 +39,14 @@ public:
 
   bool PYROCHLORE;
 
+  int CUTOFF;
+
   bool EIGVEC, ZEROCORR, NNCORR, MIDCORR;
 
   complex<double> zero;
   int Nb, Nt;
+
+  ofstream Qout;
 
 
   Solver();
@@ -82,6 +92,18 @@ public:
 
   vector<double> HoleDens(Eigen::Matrix<double, -1, 1, 0, -1, 1> statecoeffs);
 
+  vector<short int> translate(vector<short int> statevec, int trans);
+  vector<double> TransMat(int trans);
+  void GSQvec();
+
+  vector<short int> parity(vector<short int> statevec);
+  Matrix<double, Dynamic, Dynamic> ParMat();
+  void GSparity();
+
+  string index_to_string(unsigned short int stateind);
+
+  void PrintState(Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> state, ostream& os);
+
   void WriteEigvals();
   void WriteSzStot();
   void WritePartition(vector<double> beta, vector<double> partition);
@@ -118,6 +140,8 @@ Solver::Solver(string dir0, ReadInputFiles params)
 
   PYROCHLORE = params.PYROCHLORE;
 
+  CUTOFF = params.CUTOFF;
+
   EIGVEC = params.EIGVECS;
   ZEROCORR = params.ZEROCORR;
   NNCORR = params.NNCORR;
@@ -129,6 +153,19 @@ Solver::Solver(string dir0, ReadInputFiles params)
   for (int i = 0; i < Nh; i++)
   {
     TWOLpow[i] = pow(TWOL, i);
+  }
+
+  if (params.RESETFILES)
+  {
+    Qout = ofstream(dir + "Qstates.txt");
+    if (!Qout.is_open())
+      cout<<"Could not open file" << endl;
+  }
+  else
+  {
+    Qout = ofstream(dir + "Qstates.txt", std::ios_base::app);
+    if (!Qout.is_open())
+      cout<<"Could not open file" << endl;
   }
 }
 
@@ -176,6 +213,8 @@ void Solver::solve()
   eigenvalsp = eigenvals;
   eigenvecsp = eigenvecs;
   converttablep = converttable;
+
+  GSQvec();
 
   WriteEigvals();
   WriteSzStot();
@@ -239,6 +278,8 @@ void Solver::solve()
     WriteEigvals();
     WriteSzStot();
     WriteHoleDens();
+
+    GSQvec();
 
     //Compute correlations here!
 
@@ -1138,7 +1179,13 @@ vector<vector<vector<complex<double>>>> Solver::SzCorrMatZERO(vector<double> bet
 
   Matrix<double,Dynamic,Dynamic> eigenvecsinv;
 
+  double start2 = clock();
+
   eigenvecsinv = eigenvecs.inverse();
+
+  double stop2 = clock();
+
+  cout << "SzMAT invert time: " << (stop2-start2)/CLOCKS_PER_SEC << endl;
 
   for(int j = 0; j < TWOL; j++)
   {
@@ -1151,24 +1198,63 @@ vector<vector<vector<complex<double>>>> Solver::SzCorrMatZERO(vector<double> bet
   vector<vector<complex<double>>> msum(TWOL, vector<complex<double>>(Nt, zero));
   vector<vector<vector<complex<double>>>> SzSz(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
-  for(int n = 0; n < maxIndexValue; n++)
+  double start1 = clock(); //start clock
+  if(CUTOFF)
   {
-    for(int j = 0; j < TWOL; j++)
-      for(int t = 0; t < Nt; t++)
+    //Compute correlations only for energies up to T bigger than GS.
+    //Doing only static to save time.
+    int n;
+
+    for(int b = 0; b < Nb; b++)
+    {
+      n = 0;
+      while(abs(eigenvals[n]-minval) < 1./beta[b]) //Only for n-sum?
       {
-        msum[j][t] = zero;
-        for(int m = 0; m < maxIndexValue; m++)
-        {
-          msum[j][t] += S0eigenbasis(n, m)*Sjeigenbasis[j](m, n)*exponential(-(eigenvals[n]-eigenvals[m])*time[t]);
-        }
+        for(int j = 0; j < TWOL; j++)
+          for(int t = 0; t < Nt; t++)
+          {
+            msum[j][t] = zero;
+            for(int m = 0; m < maxIndexValue; m++)
+            {
+              msum[j][t] += S0eigenbasis(n, m)*Sjeigenbasis[j](m, n);
+            }
+          }
+        for(int j = 0; j < TWOL; j++)
+          for(int t = 0; t < Nt; t++)
+          {
+            SzSz[j][b][t] += exp(-beta[b]*(eigenvals[n]-minval))*msum[j][t];
+          }
+        n++;
       }
-    for(int j = 0; j < TWOL; j++)
-      for(int t = 0; t < Nt; t++)
-        for(int b = 0; b < Nb; b++)
-        {
-          SzSz[j][b][t] += exp(-beta[b]*(eigenvals[n]-minval))*msum[j][t];
-        }
+    }
+
   }
+  else
+  {
+    for(int n = 0; n < maxIndexValue; n++) //Only for n-sum?
+    {
+      for(int j = 0; j < TWOL; j++)
+        for(int t = 0; t < Nt; t++)
+        {
+          msum[j][t] = zero;
+          for(int m = 0; m < maxIndexValue; m++)
+          {
+            msum[j][t] += S0eigenbasis(n, m)*Sjeigenbasis[j](m, n)*exponential(-(eigenvals[n]-eigenvals[m])*time[t]);
+          }
+        }
+      for(int j = 0; j < TWOL; j++)
+        for(int t = 0; t < Nt; t++)
+          for(int b = 0; b < Nb; b++)
+          {
+            SzSz[j][b][t] += exp(-beta[b]*(eigenvals[n]-minval))*msum[j][t];
+          }
+    }
+  }
+
+  double stop1 = clock();
+
+  cout << "SzMAT core time: " << (stop1-start1)/CLOCKS_PER_SEC << endl;
+
   return SzSz;
 }
 
@@ -1190,7 +1276,11 @@ vector<vector<vector<complex<double>>>> Solver::SzCorrMatNN(vector<double> beta,
   vector<vector<complex<double>>> msum(TWOL, vector<complex<double>>(Nt, zero));
   vector<vector<vector<complex<double>>>> SzSz(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
-  for(int n = 0; n < maxIndexValue; n++)
+  int maxInd;
+  if(CUTOFF){maxInd = maxIndexValue;}
+  else {maxInd = maxIndexValue;}
+
+  for(int n = 0; n < maxInd; n++) //Only for n-sum?
   {
     for(int j = 0; j < TWOL; j++)
       for(int t = 0; t < Nt; t++)
@@ -1231,7 +1321,11 @@ vector<vector<vector<complex<double>>>> Solver::SzCorrMatMID(vector<double> beta
   vector<vector<complex<double>>> msum(TWOL, vector<complex<double>>(Nt, zero));
   vector<vector<vector<complex<double>>>> SzSz(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
-  for(int n = 0; n < maxIndexValue; n++)
+  int maxInd;
+  if(CUTOFF){maxInd = maxIndexValue;}
+  else {maxInd = maxIndexValue;}
+
+  for(int n = 0; n < maxInd; n++) //Only for n-sum?
   {
     for(int j = 0; j < TWOL; j++)
       for(int t = 0; t < Nt; t++)
@@ -1373,7 +1467,11 @@ vector<vector<vector<complex<double>>>> Solver::SpmCorrMatZERO(Eigen::Matrix<dou
   vector<vector<vector<double>>>partsum(TWOL, vector<vector<double>>(maxIndexValue, vector<double>(converttablep.MaxIndex, 0.0)));
   vector<vector<vector<complex<double>>>>totsum(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
-  for(int n = 0; n < maxIndexValue; n++)
+  int maxInd;
+  if(CUTOFF){maxInd = maxIndexValue;}
+  else {maxInd = maxIndexValue;}
+
+  for(int n = 0; n < maxInd; n++) //Only for n-sum?
     for(int m = 0; m < converttablep.MaxIndex; m++)
     {
       for(int j = 0; j < TWOL; j++) partsum[j][n][m] += Sminus0eigenbasis(m,n)*Sminusjeigenbasis[j](m,n);
@@ -1409,7 +1507,11 @@ vector<vector<vector<complex<double>>>> Solver::SpmCorrMatNN(Eigen::Matrix<doubl
   vector<vector<vector<double>>>partsum(TWOL, vector<vector<double>>(maxIndexValue, vector<double>(converttablep.MaxIndex, 0.0)));
   vector<vector<vector<complex<double>>>>totsum(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
-  for(int n = 0; n < maxIndexValue; n++)
+  int maxInd;
+  if(CUTOFF){maxInd = maxIndexValue;}
+  else {maxInd = maxIndexValue;}
+
+  for(int n = 0; n < maxInd; n++) //Only for n-sum?
     for(int m = 0; m < converttablep.MaxIndex; m++)
     {
       for(int j = 0; j < TWOL; j++) partsum[j][n][m] += Sminusjeigenbasis[j](m,n)*Sminusjeigenbasis[(j+1)%TWOL](m,n);
@@ -1447,7 +1549,11 @@ vector<vector<vector<complex<double>>>> Solver::SpmCorrMatMID(Eigen::Matrix<doub
   vector<vector<vector<double>>>partsum(TWOL, vector<vector<double>>(maxIndexValue, vector<double>(converttablep.MaxIndex, 0.0)));
   vector<vector<vector<complex<double>>>>totsum(TWOL, vector<vector<complex<double>>>(Nb, vector<complex<double>>(Nt, zero)));
 
-  for(int n = 0; n < maxIndexValue; n++)
+  int maxInd;
+  if(CUTOFF){maxInd = maxIndexValue;}
+  else {maxInd = maxIndexValue;}
+
+  for(int n = 0; n < maxInd; n++) //Only for n-sum?
     for(int m = 0; m < converttablep.MaxIndex; m++)
     {
       for(int j = 0; j < TWOL; j++) partsum[j][n][m] += SminusMIDeigenbasis(m,n)*Sminusjeigenbasis[j](m,n);
@@ -1658,6 +1764,356 @@ vector<double> Solver::HoleDens(Eigen::Matrix<double, -1, 1, 0, -1, 1> statecoef
   }
 
   return ans;
+}
+
+
+vector<short int> Solver::translate(vector<short int> statevec, int trans)
+{
+  //Translate statevec by trans to the right
+  int veclength = statevec.size();
+  vector<short int> transvec(veclength);
+
+  for (int j = 0; j < veclength; j++)
+  {
+    transvec[(j+trans+veclength)%veclength] = statevec[j];
+  }
+
+  return transvec;
+}
+
+
+/*Matrix<double, Dynamic, Dynamic> Solver::TransMat(int trans)
+{
+  //For each state, translate it by trans to the right and construct the corresponding TransMat.
+
+  Matrix<double, Dynamic, Dynamic> ans(maxIndexValue, maxIndexValue);
+  ans.setZero();
+
+  unsigned int statenum, transnum;
+  vector<short int> statevec, transvec;
+  short unsigned int transind;
+
+  for (int i = 0; i < maxIndexValue; i++)
+  {
+    statenum = converttable.index_to_state[i];
+    statevec = statenum_to_statevec(statenum);
+    transvec = translate(statevec, trans);
+    transnum = statevec_to_statenum(transvec);
+    transind = converttable.state_to_index[transnum];
+
+    ans(transind, i) = 1;
+  }
+
+  return ans;
+}*/
+
+vector<double> Solver::TransMat(int trans)
+{
+  //For each state, translate it by trans to the right and construct the corresponding TransMat.
+
+  vector<double> ans(maxIndexValue);
+
+  unsigned int statenum, transnum;
+  vector<short int> statevec, transvec;
+  short unsigned int transind;
+
+  for (int i = 0; i < maxIndexValue; i++)
+  {
+    statenum = converttable.index_to_state[i];
+    statevec = statenum_to_statevec(statenum);
+    transvec = translate(statevec, trans);
+    transnum = statevec_to_statenum(transvec);
+    transind = converttable.state_to_index[transnum];
+
+    ans[i] = transind;
+  }
+
+  return ans;
+}
+
+
+void Solver::GSQvec()
+{
+  double qstart = clock();
+  vector<double> Ta2;
+
+  //Ta1 = TransMat(2); //corresponding to transtaion by a1
+  //I don't have to check Ta1. Ta2 i sufficient as Ta1 is (Ta2))^2, so the
+  //eigenvalues of Ta1 are the eigenvalues of Ta2 squared.
+  Ta2 = TransMat(1); //corresponding to transtaion by a2
+
+  //Now we have the translation matrices. Next, we need to find Q.
+  //If the ground state is degenerate, the corresponding eigen states may not be
+  //eigensttates of the translation operators, we then need to find the appropriate
+  //superpositions. This is done by diagonalising the translation matrices in the
+  //ground state subspace.
+
+  //So I should probably first find the GS degeneracy:
+
+  int deg = 1;
+  double diff = (eigenvals[deg] - eigenvals[0])/eigenvals[0];
+
+  Qout << "nu = " << nu << "      Lowest energy = " << eigenvals[0] << endl;
+
+  while (abs(diff) < 1e-9 && deg < maxIndexValue)
+  {
+    deg += 1;
+    if (deg == maxIndexValue){break;}
+    diff = (eigenvals[deg] - eigenvals[0])/eigenvals[0];
+  }
+  Qout << "Degeneracy = " << deg << endl;
+
+  //Then construct the subspace matrices:
+
+  //Matrix<double, Dynamic, Dynamic> Ta1subspace(deg, deg);
+  Matrix<double, Dynamic, Dynamic> Ta2subspace(deg, deg);
+  Ta2subspace.setZero();
+
+  for (int i = 0; i < deg; i++)
+    for (int j = 0; j < deg; j++)
+    {
+      //Ta1subspace(i, j) = eigenvecs.col(i).transpose()*Ta1*eigenvecs.col(j);
+      for (int k = 0; k < maxIndexValue; k++) {Ta2subspace(i, j) += eigenvecs.col(i)[Ta2[k]]*eigenvecs.col(j)[k];}
+    }
+
+  //Then diagnoalise them:
+
+  //EigenSolver<Matrix<double,Dynamic,Dynamic>> esa2;
+  EigenSolver<Matrix<double,Dynamic,Dynamic>> esa2;
+
+  //Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> eigenvalsa1;
+  //Matrix<complex<double>,Dynamic,Dynamic> eigenvecsa1;
+  Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> eigenvalsa2;
+  Matrix<complex<double>,Dynamic,Dynamic> eigenvecsa2;
+
+  //esa1 = EigenSolver<Matrix<double,Dynamic,Dynamic>>(Ta1subspace, ComputeEigenvectors);
+  esa2 = EigenSolver<Matrix<double,Dynamic,Dynamic>>(Ta2subspace, ComputeEigenvectors);
+  //eigenvalsa1 = esa1.eigenvalues();
+  //eigenvecsa1 = esa1.eigenvectors();
+  eigenvalsa2 = esa2.eigenvalues();
+  eigenvecsa2 = esa2.eigenvectors();
+
+  //Then figure out which Q's they correspond to: (loop through all possible Q values?)
+  //eigenvalsa1 = e^{iQ.a1} and eigenvalsa2 = e^{iQ.a2}
+
+  //Compute all allowed Q's and all pairs of e^{iQ.a1} and e^{iQ.a2}.
+  //For each ground state, find which Q (eigenvalsa1, eigenvalsa2) corresponds to:
+
+  vector<double> possibleQ(2, 0.0);
+  vector<vector<double>> Qs(deg, vector<double>(2, 100.0));
+
+  bool found;
+  complex<double> diff2;
+
+  for (int i = 0; i < deg; i++)
+  {
+    found = false;
+    for (int ny = 0; ny < 2; ny++)
+    {
+      for (int nx = 0; nx < Nsites/2; nx++)
+      {
+        possibleQ = {TWOPI/(Nsites/2.)*nx, TWOPI/sqrt(3)*ny};
+
+        //diff1 = eigenvalsa1[i] - exponential(possibleQ[0]);
+        //cout << diff1 << endl;
+        diff2 = eigenvalsa2[i] - exponential(0.5*possibleQ[0]+SQRTTHREEOVERTWO*possibleQ[1]);
+        //cout << eigenvalsa2[i] << "  " << exponential(0.5*possibleQ[0]+SQRTTHREEOVERTWO*possibleQ[1]) << endl;
+        //cout << diff2 << endl;
+
+        if (abs(diff2.real()) < 1e-13 && abs(diff2.imag()) < 1e-13)
+        {
+          Qs[i] = possibleQ;
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+    //if (found) cout << "found" << endl;
+    //else cout << "not found" << endl;
+    //cout << "Q = (" << Qs[i][0] << ", " << Qs[i][1] << ")" << endl;
+  }
+
+  //auto inttostringfunc = std::bind(&Solver::myinttostring, this, std::placeholders::_1);
+
+  Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> Qstate(maxIndexValue);
+  for (int i = 0; i < deg; i++)
+  {
+    Qstate.setZero();
+    Qout << "Q = (" << Qs[i][0] << ", " << Qs[i][1] << ")" << endl;
+    //for (int k = 0; k < maxIndexValue; k++) Qstate[k] = eigenvecsa2.col(i)[0]*eigenvecs.col(0)[k];
+    for (int j = 0; j < deg; j++) for (int k = 0; k < maxIndexValue; k++) {Qstate[k] += eigenvecsa2.col(i)[j]*eigenvecs.col(j)[k];}
+    PrintState(Qstate, Qout);
+  }
+
+  double qstop = clock();
+
+  Qout << "Q time: " << (qstop-qstart)/CLOCKS_PER_SEC << endl;
+
+
+  Qout << endl;
+
+  return;
+}
+
+
+vector<short int> Solver::parity(vector<short int> statevec)
+{
+  //Translate statevec by trans to the right
+  int veclength = statevec.size();
+  vector<short int> parvec(veclength);
+
+  for (int j = 0; j < veclength; j++)
+  {
+    parvec[j] = statevec[veclength-1-j];
+  }
+
+  return parvec;
+}
+
+
+Matrix<double, Dynamic, Dynamic> Solver::ParMat()
+{
+  //For each state, translate it by trans to the right and construct the corresponding TransMat.
+
+  Matrix<double, Dynamic, Dynamic> ans(maxIndexValue, maxIndexValue);
+  ans.setZero();
+
+  unsigned int statenum, parnum;
+  vector<short int> statevec, parvec;
+  short unsigned int parind;
+
+  for (int i = 0; i < maxIndexValue; i++)
+  {
+    statenum = converttable.index_to_state[i];
+    statevec = statenum_to_statevec(statenum);
+    parvec = parity(statevec);
+    parnum = statevec_to_statenum(parvec);
+    parind = converttable.state_to_index[parnum];
+
+    ans(parind, i) = 1;
+  }
+
+  return ans;
+}
+
+
+void Solver::GSparity()
+{
+  Matrix<double, Dynamic, Dynamic> P;
+
+  P = ParMat(); //corresponding to transtaion by a2
+
+  //Now we have the parity operator.
+  //If the ground state is degenerate, the corresponding eigen states may not be
+  //eigensttates of the parity operator, we then need to find the appropriate
+  //superpositions. This is done by diagonalising the parity matrix in the
+  //ground state subspace.
+
+  //So I should probably first find the GS degeneracy:
+
+  int deg = 1;
+  double diff = (eigenvals[deg] - eigenvals[0])/eigenvals[0];
+
+  cout << eigenvals[0] << endl;
+
+  while (abs(diff) < 1e-9 && deg < maxIndexValue)
+  {
+    deg += 1;
+    if (deg == maxIndexValue){break;}
+    diff = (eigenvals[deg] - eigenvals[0])/eigenvals[0];
+  }
+  cout << "Degeneracy = " << deg << endl;
+
+  //Then construct the subspace matrices:
+
+  //Matrix<double, Dynamic, Dynamic> Ta1subspace(deg, deg);
+  Matrix<double, Dynamic, Dynamic> Psubspace(deg, deg);
+
+  for (int i = 0; i < deg; i++)
+    for (int j = 0; j < deg; j++)
+    {
+      //Ta1subspace(i, j) = eigenvecs.col(i).transpose()*Ta1*eigenvecs.col(j);
+      Psubspace(i, j) = eigenvecs.col(i).transpose()*P*eigenvecs.col(j);
+    }
+
+  //Then diagnoalise them:
+
+  //EigenSolver<Matrix<double,Dynamic,Dynamic>> esa2;
+  EigenSolver<Matrix<double,Dynamic,Dynamic>> esP;
+
+  //Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> eigenvalsa1;
+  //Matrix<complex<double>,Dynamic,Dynamic> eigenvecsa1;
+  Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> eigenvalsP;
+  Matrix<complex<double>,Dynamic,Dynamic> eigenvecsP;
+
+  //esa1 = EigenSolver<Matrix<double,Dynamic,Dynamic>>(Ta1subspace, ComputeEigenvectors);
+  esP = EigenSolver<Matrix<double,Dynamic,Dynamic>>(Psubspace, ComputeEigenvectors);
+  //eigenvalsa1 = esa1.eigenvalues();
+  //eigenvecsa1 = esa1.eigenvectors();
+  eigenvalsP = esP.eigenvalues();
+  eigenvecsP = esP.eigenvectors();
+
+
+  //What now? Print parity GS?
+
+  return;
+}
+
+
+string Solver::index_to_string(unsigned short int stateind)
+{
+  unsigned int statenum = converttable.index_to_state[stateind];
+  vector<short int> statevec = statenum_to_statevec(statenum);
+
+  string statestring;
+
+  if (statevec[0] == -1) statestring = "-";
+  else if (statevec[0] == 0) statestring = "o";
+  else if (statevec[0] == +1) statestring = "+";
+
+  for (int pos = 1; pos < Nsites; pos++)
+  {
+    if (statevec[pos] == -1) statestring += "-";
+    else if (statevec[pos] == 0) statestring += "o";
+    else if (statevec[pos] == +1) statestring += "+";
+  }
+
+  return statestring;
+}
+
+
+void Solver::PrintState(Eigen::Matrix<complex<double>, -1, 1, 0, -1, 1> state, ostream& os)
+{
+  const int WORDLENGTH = index_to_string(0).size();
+  const int NWORDSONALINE = PAGEWIDTH/(WORDLENGTH+SPACING+PRESPACING);
+
+  PrettyPrint pp(os,NWORDSONALINE,WORDLENGTH,SPACING);
+
+  vector<cspair> estate(maxIndexValue);
+  for(int i = 0; i < maxIndexValue; i++)
+  {
+    estate[i] = cspair(state[i],i);
+  }
+
+  sort(estate.begin(),estate.end(),bigabsfirst);
+
+  double startcoeff = abs(estate[0].c);
+  double currentcoeff = startcoeff;
+  int i = 0;
+
+  while(i < maxIndexValue && abs(estate[i].c) > COEFFLIMIT*startcoeff)
+  {
+    os << "+" << currentcoeff << "(";
+    while(abs(abs(estate[i].c) - currentcoeff) < 1e-10)
+    {
+      pp.add(estate[i].c, index_to_string(estate[i].s));
+	    i++;
+	  }
+	  pp.flush();
+	  if(i < maxIndexValue) {currentcoeff = abs(estate[i].c);}
+	  os << ")" << endl;
+  }
 }
 
 

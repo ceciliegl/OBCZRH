@@ -148,7 +148,7 @@ for run_number in run_numbers:
     for b in range(len(beta)):
         plt.plot(range(Nsites), corrrealZERO[:,b,0], label=r"$\beta = %.2f$" % beta[b])
     plt.xlabel(r"site $j$")
-    plt.ylabel(r"$\langle S^z_{0}S^z_{j} \rangle$")
+    plt.ylabel(r"$\langle N^h_{0}N^h_{j} \rangle$")
     plt.title("Run"+ run_number)
     #plt.title("One hole, Ising FM, t = 10")
     plt.legend()
@@ -157,7 +157,16 @@ for run_number in run_numbers:
     for b in range(len(beta)):
         plt.plot(range(Nsites), corrrealMID[:,b,0], label=r"$\beta = %.2f$" % beta[b])
     plt.xlabel(r"site $j$")
-    plt.ylabel(r"$\langle S^z_{MID}S^z_{j} \rangle$")
+    plt.ylabel(r"$\langle N^h_{MID}N^h_{j} \rangle$")
+    plt.title("Run"+ run_number)
+    #plt.title("One hole, Ising FM, t = 10")
+    plt.legend()
+
+    plt.figure()
+    for b in range(len(beta)):
+        plt.plot(range(Nsites), corrrealNN[:,b,0], label=r"$\beta = %.2f$" % beta[b])
+    plt.xlabel(r"site $j$")
+    plt.ylabel(r"$\langle N^h_{j}N^h_{j+1} \rangle$")
     plt.title("Run"+ run_number)
     #plt.title("One hole, Ising FM, t = 10")
     plt.legend()

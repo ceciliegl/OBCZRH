@@ -15,6 +15,8 @@ public:
 
   bool PYROCHLORE;
 
+  int CUTOFF;
+
   bool EIGVECS, ZEROCORR, NNCORR, MIDCORR;
   bool RESETFILES;
 
@@ -44,6 +46,7 @@ void ReadInputFiles::generate()
   parameters >> nothing >> nothing >> tl; parameters >> nothing >> nothing >> tr; parameters >> nothing >> nothing >> Jzl; parameters >> nothing >> nothing >> Jzr; parameters >> nothing >> nothing >> Jpml; parameters >> nothing >> nothing >> Jpmr;
   parameters >> nothing >> nothing >> OBC;
   parameters >> nothing >> nothing >> PYROCHLORE;
+  parameters >> nothing >> nothing >> CUTOFF;
   parameters >> nothing >> nothing >> EIGVECS;
   parameters >> nothing >> nothing >> ZEROCORR;
   parameters >> nothing >> nothing >> NNCORR;

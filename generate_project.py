@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-mainproject = "TwoHolesMIDCORRBettervaluesoft"  #Set to zero if only one project.
-project = "N7"
-description = "Testing."
+mainproject = "Negativet"  #Set to zero if only one project.
+project = "Nagaoka"
+description = "Testing the Nagaoka FM. What is the GS? Quantum or classical?"
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 19
+runmax = 5
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -16,24 +16,26 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = 7*np.ones(nruns, int)
+Nsites = np.array([6, 8, 10, 12], int) #10*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
-Nh = 2*np.ones(nruns, int);
+Nh = 1*np.ones(nruns, int);
 
-OBCx = 1
-OBCy = 1
+OBCx = 0
+OBCy = 0
 
 PYROCHLORE = 0
 if PYROCHLORE:
     OBCx = 1
     OBCy = 1
 
+CUTOFF = 0 #If 0 there is no cut-off, else CUTOFF sets the number of states to be included when computing correlations.
+
 #EXCHANGE#
-tl     = np.array([0, 0.25, 0.5, 0.75, 1, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 2, 3, 4, 5, 6, 7, 10, 20, 100]) #np.linspace(0, 5, nruns)#np.ones(nruns)
+tl     = -1*np.ones(nruns)
 tr     = tl
-Jzl    = -np.ones(nruns)
+Jzl    = 0*np.ones(nruns)
 Jzr    = Jzl
 Jpml   = np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))
 Jpmr   = Jpml
@@ -50,9 +52,9 @@ if not OBCx and OBCy:
     Jpmr = 0.5*Jpmr
 
 EIGVECS = 1         #Compute eigenvectors?
-ZEROCORR = 1        #Compute all correlations for site zero?
-NNCORR = 1          #Compute all nearest neighbour correlations?
-MIDCORR = 1         #Compute all correlations for middle site?
+ZEROCORR = 0        #Compute all correlations for site zero?
+NNCORR = 0          #Compute all nearest neighbour correlations?
+MIDCORR = 0         #Compute all correlations for middle site?
 
 RESETOLDFILES = 1
 
@@ -149,6 +151,10 @@ for run in range(runmin, nruns + runmin):
 
     outfile.write("PYROCHLORE = ")
     outfile.write(str(PYROCHLORE))
+    outfile.write("\n")
+
+    outfile.write("CUTOFF = ")
+    outfile.write(str(CUTOFF))
     outfile.write("\n")
 
     outfile.write("EIGVECS = ")

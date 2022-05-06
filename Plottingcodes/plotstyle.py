@@ -17,9 +17,13 @@ reputation  = (37./255, 38./255, 39./255)
 lover       = (214./255, 54./255, 141./255)
 folklore    = (171./255, 171./255, 171./255)
 evermore    = (163./255, 91./255, 57./255)
+other1      = (1, 0, 0)
+other2      = (0, 1, 0)
+other3      = (0, 0, 1)
+other4      = (0, 1, 1)
 
 TSpalette = [taylorswift, fearless, speaknow, red, TS1989, reputation, lover, folklore, evermore]
-sortedTSpalette = [TS1989, lover, fearless, taylorswift, speaknow, red, reputation, folklore, evermore]
+sortedTSpalette = [TS1989, lover, fearless, taylorswift, speaknow, red, reputation, folklore, evermore, other1, other2, other3, other4]
 mpl.rcParams['axes.prop_cycle'] = cycler(color=sortedTSpalette)
 
 

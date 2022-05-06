@@ -125,7 +125,7 @@ for run_number in run_numbers:
     plt.ylabel(r"$\frac{1}{2}\langle S^x_{0}S^x_{j} + S^y_{0}S^y_{j} \rangle$")
     plt.title("Run"+ run_number)
     #plt.title("One hole, Ising FM, t = 10")
-    plt.legend()
+    #plt.legend()
 
     plt.figure()
     for b in range(len(beta)):
@@ -134,7 +134,7 @@ for run_number in run_numbers:
     plt.ylabel(r"$\langle S^z_{0}S^z_{j} \rangle$")
     plt.title("Run"+ run_number)
     #plt.title("One hole, Ising FM, t = 10")
-    plt.legend()
+    #plt.legend()
 
 plt.show()
 
