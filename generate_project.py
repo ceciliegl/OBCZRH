@@ -1,9 +1,9 @@
 import os
 import numpy as np
 
-mainproject = "Negativet"  #Set to zero if only one project.
-project = "Nagaoka"
-description = "Testing the Nagaoka FM. What is the GS? Quantum or classical?"
+mainproject = "TestQvecs"  #Set to zero if only one project.
+project = "N12Nh2"
+description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
@@ -16,11 +16,11 @@ NICE = 11
 #BOOST = 0       #Higher precision in Eigen-calculations. Time-consuming. Not implemented for now.
 
 #LATTICE#
-Nsites = np.array([6, 8, 10, 12], int) #10*np.ones(nruns, int)
+Nsites = 12*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
-Nh = 1*np.ones(nruns, int);
+Nh = 2*np.ones(nruns, int);
 
 OBCx = 0
 OBCy = 0
@@ -33,7 +33,7 @@ if PYROCHLORE:
 CUTOFF = 0 #If 0 there is no cut-off, else CUTOFF sets the number of states to be included when computing correlations.
 
 #EXCHANGE#
-tl     = -1*np.ones(nruns)
+tl     = 1*np.ones(nruns)
 tr     = tl
 Jzl    = 0*np.ones(nruns)
 Jzr    = Jzl
