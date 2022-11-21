@@ -8,7 +8,7 @@ LINKOPTS =  -Wall -O3
 CCFLAGS = $(CCOPTS) $(INCDIR)
 
 
-RUNSOURCES =  run.cpp Makefile Solver.hpp indexstate.hpp BasicFunctions.hpp Quantities.hpp PrintFunctions.hpp ReadInputFiles.hpp
+RUNSOURCES =  run.cpp Makefile Solver.hpp indexstate.hpp BasicFunctions.hpp Quantities.hpp makepretty.h ReadInputFiles.hpp
 
 
 program: run.o

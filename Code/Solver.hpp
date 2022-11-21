@@ -1920,7 +1920,7 @@ void Solver::GSQvec()
         //cout << eigenvalsa2[i] << "  " << exponential(0.5*possibleQ[0]+SQRTTHREEOVERTWO*possibleQ[1]) << endl;
         //cout << diff2 << endl;
 
-        if (abs(diff2.real()) < 1e-13 && abs(diff2.imag()) < 1e-13)
+        if (abs(diff2.real()) < 1e-9 && abs(diff2.imag()) < 1e-9)
         {
           Qs[i] = possibleQ;
           found = true;
@@ -2059,6 +2059,60 @@ void Solver::GSparity()
 
   return;
 }
+
+
+/*void Solver::SqSq()
+{
+  //Compute \ev{S-qSq}
+
+  //Need to choose values of q. For a periodic system it would make sense to only do the allowed q's? How does that work with holes?
+  //For OBC, I guess we could choose a fixed set of q's?
+  //For OBCx PBCy we could discretize in y-direction?
+
+  int Nx = Nsites/2;
+  int Ny = 2;
+
+  double dqx = TWOPI/Nx;
+  double dqy = TWOPI/sqrt(3);
+
+
+  //if (PBC)
+  //{
+  //  Nx = Nsites/2;
+  //}
+  //else
+  //{
+  //  Nx = 20;
+  //}
+
+  int Nq = Nx*Ny;
+
+  vector<double> q(2);
+
+  for (int nqy = 0; nqy < 2; nqy++)
+    for (int nqx = 0; nqx < Nx; nqx++)
+    {
+      q = {dqx*nqx, dqy*nqy};
+
+      //THIS IS WHERE YOU ARE WORKING CURRENTLY
+
+      //Compute SqSq and write to file q SqSq. Cannot compute it here, it must be computed for each sector and added properly together.
+    }
+
+  return;
+}
+
+
+void Solver::LocMag();
+{
+  //Compute the local magnetisation.
+  //Maybe the expression for the local magnetisation should depend on some variable?
+  //Start with the AFM on triangular lattice and extend to other cases later.
+
+  //Expectation value of local magnetisation?
+
+  //Must compute for each sector separately.
+}*/
 
 
 string Solver::index_to_string(unsigned short int stateind)

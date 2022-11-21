@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-mainproject = "TestQvecs"  #Set to zero if only one project.
-project = "N12Nh2"
+mainproject = "TestDeleteAfterwards"  #Set to zero if only one project.
+project = "N12Nh1"
 description = "Testing."
 jobname = "myjob"
 time = "5:00:00"
 runmin = 0
-runmax = 5
+runmax = 0
 runsame = 0
 nruns = (runmax-runmin) + 1
 NICE = 11
@@ -20,7 +20,7 @@ Nsites = 12*np.ones(nruns, int)
 nruns  = len(Nsites)
 runmax = runmin + (nruns-1)
 
-Nh = 2*np.ones(nruns, int);
+Nh = 1*np.ones(nruns, int);
 
 OBCx = 0
 OBCy = 0
@@ -35,9 +35,9 @@ CUTOFF = 0 #If 0 there is no cut-off, else CUTOFF sets the number of states to b
 #EXCHANGE#
 tl     = 1*np.ones(nruns)
 tr     = tl
-Jzl    = 0*np.ones(nruns)
+Jzl    = 1.45*np.ones(nruns)
 Jzr    = Jzl
-Jpml   = np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))
+Jpml   = 0.3*np.ones(nruns) #np.zeros(nruns) #-(1*np.logspace(0, np.log10(2), nruns)-np.ones(nruns))
 Jpmr   = Jpml
 
 OBC = OBCx             #1 for open boundary conditions. 0 for periodic boundary conditions.
